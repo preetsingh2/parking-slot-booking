@@ -1,6 +1,7 @@
 package com.mastek.parking.service;
 
 import com.mastek.parking.dto.UserDto;
+import com.mastek.parking.exception.ExistingUserException;
 import com.mastek.parking.model.User;
 import com.mastek.parking.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -29,16 +30,28 @@ public class UserDetailsServiceImpl implements UserDetailService{
     private Validator validator;
     @Override
     @Transactional
-    public String addUser(UserDto userDto) {
+    public User addUser(UserDto userDto) {
         Set<ConstraintViolation<UserDto>> violations = validator.validate(userDto);
         if (!violations.isEmpty()) {
             throw new ConstraintViolationException(violations);
         }
-
         //verify user is existing
+        if(checkExistingUser(userDto)){
+             throw new ExistingUserException("User is already existing");
+        }
+            User user = new User();
+            user.setFirstName(userDto.getFirstName());
+            user.setLastName(userDto.getLastName());
+            user.setEmail(userDto.getEmail());
+            user.setPassword(userDto.getPassword());
+            user.setMobileNumber(userDto.getMobileNumber());
+            user.setCreatedBy(userDto.getCreated_by());
+            return userRepository.save(user);
+
+       /* //verify user is existing
         if(!checkExistingUser(userDto)){
         // Convert UserDto to User entity
-        User user = new User();
+
         user.setFirstName(userDto.getFirstName());
         user.setLastName(userDto.getLastName());
         user.setEmail(userDto.getEmail());
@@ -48,7 +61,7 @@ public class UserDetailsServiceImpl implements UserDetailService{
             return "User added successfully";
         }else{
             return "User is already existing, try login!";
-        }
+        }*/
     }
 
     @Override
@@ -58,5 +71,13 @@ public class UserDetailsServiceImpl implements UserDetailService{
 
     private boolean checkExistingUser(UserDto userDto){
         return userRepository.findByEmail(userDto.getEmail()) != null;
+    }
+
+    @Override
+    @Transactional
+    public User getUserById(Long userId) {
+        // Retrieve user by ID from the database
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
     }
 }

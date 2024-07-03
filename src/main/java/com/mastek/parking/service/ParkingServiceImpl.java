@@ -42,7 +42,7 @@ public class ParkingServiceImpl implements ParkingService{
         parking.setLocation(parkingDto.getLocation());
         parking.setIsOccupied(parkingDto.getIs_occupied());
         parking.setSlotNumber(parkingDto.getSlotNumber());
-
+        parking.setCreatedBy(parkingDto.getCreated_by());
         return parkingRepository.save(parking);
     }
 

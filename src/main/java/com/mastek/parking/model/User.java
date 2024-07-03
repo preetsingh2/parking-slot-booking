@@ -1,17 +1,16 @@
 package com.mastek.parking.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.mastek.parking.dto.UserDto;
 import lombok.Builder;
 import lombok.Data;
+import org.springframework.format.annotation.DateTimeFormat;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
+import java.util.Date;
 
 @Entity
 @Table(name = "\"user_details\"") // Specify the exact table name with quotes
@@ -38,10 +37,38 @@ public class User {
 
     @NotBlank(message = "Password is mandatory")
     @Size(max = 10, message = "password cannot be longer than 10 characters")
+    @JsonIgnore // Prevents serialization of password field
     private String password;
 
     @NotBlank(message = "Phone number is mandatory")
     @Size(max = 10, message = "Phone number cannot be longer than 10 characters")
     @Column(name = "mobile_number")
     private String mobileNumber;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    @DateTimeFormat(pattern = "HH:mm:ss")
+    @Column(name = "created_date", updatable = false)
+    private Date createdDate;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    @DateTimeFormat(pattern = "HH:mm:ss")
+    @Column(name = "updated_date")
+    private Date updatedDate;
+
+    @Column(name = "created_by")
+    private String createdBy;
+
+    @PrePersist
+    protected void onCreate() {
+        createdDate = new Date();
+        updatedDate = new Date();
+
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedDate = new Date();
+    }
+
+
 }

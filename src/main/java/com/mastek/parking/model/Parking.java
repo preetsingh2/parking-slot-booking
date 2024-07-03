@@ -25,6 +25,8 @@ public class Parking {
     @Column(name = "slot_number")
     private Long slotNumber;
 
+    @Column(name = "created_by")
+    private String createdBy;
 
     /*@Column(name = "description")
     private String description;*/

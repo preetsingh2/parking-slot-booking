@@ -16,12 +16,12 @@ public interface BookingService {
     List<Parking> checkAvailability(String location);
 
     @Transactional
-    String bookParkingSlot(BookingDto bookingDto);
+    Booking bookParkingSlot(BookingDto bookingDto);
 
     @Transactional
-    boolean cancelBooking(String bookingId);
+    void cancelBooking(String bookingId);
 
 
     @Transactional
-    String updateBooking(UpdateBookingDto updateBookingDto);
+    Booking updateBooking(UpdateBookingDto updateBookingDto);
 }

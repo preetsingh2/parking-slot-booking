@@ -13,4 +13,5 @@ public class ParkingDto {
     private String location;
     private Boolean is_occupied;
    // private Long availableSpots;
+    private String created_by;
 }
