@@ -28,15 +28,5 @@ public class Parking {
     @Column(name = "created_by")
     private String createdBy;
 
-    /*@Column(name = "description")
-    private String description;*/
-
-    /*@Column(name = "available_Spots")
-    private int availableSpots;*/
-
-    /*@Temporal(TemporalType.DATE)
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
-    @Column(name = "date")
-    private Date date;*/
 
 }

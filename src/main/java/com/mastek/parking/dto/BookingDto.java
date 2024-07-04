@@ -32,6 +32,7 @@ public class BookingDto {
     private Date created_at;  //timestamp
     private Date updated_at;  //timestamp
     private String comment;
+    private String bookingStatus;
 
     @ManyToOne
     private ParkingDto ParkingDto;

@@ -19,8 +19,9 @@ import java.util.Date;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    //@GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "username")
+    private String username;
 
     @Column(name = "first_name")
     private String firstName;
@@ -55,8 +56,6 @@ public class User {
     @Column(name = "updated_date")
     private Date updatedDate;
 
-    @Column(name = "created_by")
-    private String createdBy;
 
     @PrePersist
     protected void onCreate() {

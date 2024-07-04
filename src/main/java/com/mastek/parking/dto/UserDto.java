@@ -7,6 +7,7 @@ import java.util.Date;
 @Data
 public class UserDto {
 
+    private String username;
     private String firstName;
     private String lastName;
     private String email;
@@ -14,11 +15,6 @@ public class UserDto {
     private String mobileNumber;
     private Date created_date;  //timestamp
     private Date updated_date;  //timestamp
-    private String created_by;
 
-    public void getUsername(){
-        String firstName = getFirstName() ;
-        String lastName = getLastName() ;
-        this.created_by = firstName+ " " +lastName;
-    }
+
 }

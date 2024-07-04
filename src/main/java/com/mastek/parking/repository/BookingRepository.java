@@ -14,8 +14,8 @@ import java.util.Optional;
 public interface BookingRepository extends JpaRepository<Booking, String> {
 
     //@Query("SELECT b FROM Booking b WHERE b.parkingSlotNumber = :parkingSlotNumber AND b.bookingDate = :bookingDate")
-    @Query("SELECT b FROM Booking b WHERE b.parkingSlotNumber = :parkingSlotNumber")
-    Optional<Booking> findByParkingSlotNumberAndBookingDate(@Param("parkingSlotNumber") Long parkingSlotNumber);
+    @Query("SELECT b FROM Booking b WHERE b.parkingSlotNumber = :parkingSlotNumber AND b.bookingStatus = 'Active'")
+    Optional<Booking> findByParkingSlotNumberAndBookingStatus(@Param("parkingSlotNumber") Long parkingSlotNumber );
 
 
 }

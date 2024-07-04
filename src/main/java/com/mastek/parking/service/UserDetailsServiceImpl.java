@@ -37,31 +37,17 @@ public class UserDetailsServiceImpl implements UserDetailService{
         }
         //verify user is existing
         if(checkExistingUser(userDto)){
-             throw new ExistingUserException("User is already existing");
+             throw new ExistingUserException("User is already existing!");
         }
             User user = new User();
+        user.setUsername(userDto.getUsername());
             user.setFirstName(userDto.getFirstName());
             user.setLastName(userDto.getLastName());
             user.setEmail(userDto.getEmail());
             user.setPassword(userDto.getPassword());
             user.setMobileNumber(userDto.getMobileNumber());
-            user.setCreatedBy(userDto.getCreated_by());
             return userRepository.save(user);
 
-       /* //verify user is existing
-        if(!checkExistingUser(userDto)){
-        // Convert UserDto to User entity
-
-        user.setFirstName(userDto.getFirstName());
-        user.setLastName(userDto.getLastName());
-        user.setEmail(userDto.getEmail());
-        user.setPassword(userDto.getPassword());
-        user.setMobileNumber(userDto.getMobileNumber());
-        userRepository.save(user);
-            return "User added successfully";
-        }else{
-            return "User is already existing, try login!";
-        }*/
     }
 
     @Override

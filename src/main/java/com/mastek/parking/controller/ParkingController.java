@@ -1,10 +1,7 @@
 package com.mastek.parking.controller;
 
 import com.mastek.parking.common.ApiResponse;
-import com.mastek.parking.dto.BookingDto;
-import com.mastek.parking.dto.ParkingDto;
-import com.mastek.parking.dto.UpdateBookingDto;
-import com.mastek.parking.dto.UserDto;
+import com.mastek.parking.dto.*;
 import com.mastek.parking.exception.*;
 import com.mastek.parking.model.Booking;
 import com.mastek.parking.model.Parking;
@@ -129,15 +126,15 @@ public class ParkingController {
             ApiResponse<Booking> response = new ApiResponse<>(false, e.getMessage(), null);
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
-            ApiResponse<Booking> response = new ApiResponse<>(false, "Failed to book parking slot.", null);
-            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            ApiResponse<Booking> response = new ApiResponse<>(false, "Parking slot unavailable", null);
+            return new ResponseEntity<>(response, HttpStatus.CONFLICT);
         }
     }
 
 
 
     @PostMapping("/cancel-booking")
-    public ResponseEntity<ApiResponse<Void>> cancelBooking(@RequestBody String bookingId) {
+    public ResponseEntity<ApiResponse<Void>> cancelBooking(@RequestBody CancelDto cancelDto) {
         // boolean success = bookingService.cancelBooking(bookingId);
         /*if (success) {
             return ResponseEntity.ok("Booking canceled successfully.");
@@ -145,8 +142,8 @@ public class ParkingController {
             return ResponseEntity.badRequest().body("Failed to cancel booking.");
         }*/
         try {
-            bookingService.cancelBooking(bookingId);
-            ApiResponse<Void> response = new ApiResponse<>(true, "Booking "+bookingId+ " canceled successfully.", null);
+            bookingService.cancelBooking(cancelDto.getBookingId());
+            ApiResponse<Void> response = new ApiResponse<>(true, "Booking "+cancelDto.getBookingId()+ " canceled successfully.", null);
             return new ResponseEntity<>(response, HttpStatus.OK);
         }  catch (InvalidBookingException e) {
             ApiResponse<Void> response = new ApiResponse<>(false, "Booking Id is Invalid.", null);

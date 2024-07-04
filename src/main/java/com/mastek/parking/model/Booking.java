@@ -66,6 +66,9 @@ public class Booking {
     @Column(name = "comment")
     private String comment;
 
+    @Column(name = "booking_status")
+    private String bookingStatus;
+
     @PrePersist
     protected void onCreate() {
         createdAt = new Date();

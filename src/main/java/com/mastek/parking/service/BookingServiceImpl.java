@@ -50,7 +50,7 @@ public class BookingServiceImpl implements BookingService{
             // return new ApiResponse<Booking>(false, "Slot not available", null);
             throw new RuntimeException("Slot not available");
         }
-        Optional<Booking> existingBooking = bookingRepository.findByParkingSlotNumberAndBookingDate(bookingDto.getParkingSlotNumber());
+        Optional<Booking> existingBooking = bookingRepository.findByParkingSlotNumberAndBookingStatus(bookingDto.getParkingSlotNumber());
         if (existingBooking.isPresent()) {
             throw new DuplicateBookingException("Booking already exists for parking slot number: " + bookingDto.getParkingSlotNumber());
         }
@@ -69,6 +69,7 @@ public class BookingServiceImpl implements BookingService{
         booking.setBookingStartDateTime(bookingDto.getBookingStartDateTime());
         booking.setBookingEndDateTime(bookingDto.getBookingEndDateTime());
         booking.setComment(bookingDto.getComment());
+        booking.setBookingStatus("Active");
         bookingRepository.save(booking);
 
         //return booking.getBookingId();
@@ -90,8 +91,13 @@ public class BookingServiceImpl implements BookingService{
         // parkingSlot.setAvailableSpots(parkingSlot.getAvailableSpots() + 1);
         parkingRepository.save(parkingSlot);
 
-        // Delete booking record
-        bookingRepository.delete(booking);
+        booking.setBookingStatus("Cancelled");
+        booking.setComment("No reason");
+        bookingRepository.save(booking);
+
+       /* // Delete booking record
+        bookingRepository.delete(booking);*/
+
 
         // return true;
     }
