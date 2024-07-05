@@ -21,7 +21,7 @@ public class BookingDto {
     private Long parkingSlotNumber;
 
    // @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private Date bookingDate;   //date
+   // private Date bookingDate;   //date
 
   //  @DateTimeFormat(pattern = "HH:mm:ss")
     private Date bookingStartDateTime;   //time
@@ -36,6 +36,10 @@ public class BookingDto {
 
     @ManyToOne
     private ParkingDto ParkingDto;
+
+    @ManyToOne
+    private UserDto UserDto;
+
 
     /*public static String generateId() {
         return "Booking_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);

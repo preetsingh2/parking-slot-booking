@@ -6,6 +6,7 @@ import static lombok.AccessLevel.PRIVATE;
 
 public class Constants {
 
+    public static final String OFFICIAL_EMAIL_PATTERN = "^[\\w._%+-]+@mastek\\.com$";
     @NoArgsConstructor(access = PRIVATE)
     public static final class Paths {
         public static final String BASE_PATH = "api";

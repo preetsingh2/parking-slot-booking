@@ -32,16 +32,14 @@ public class Booking {
     @Column(name = "parking_slot_number")
     private Long parkingSlotNumber;
 
-    @NotNull(message = "date is mandatory")
+  /*  @NotNull(message = "date is mandatory")
     @Temporal(TemporalType.DATE)
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     @Column(name = "booking_date")
-    private Date bookingDate;
+    private Date bookingDate;*/
 
     @Temporal(TemporalType.TIMESTAMP)
-   // @JsonFormat(pattern = "HH:mm:ss")
-  //  @DateTimeFormat(pattern = "HH:mm:ss")
-    //@JsonDeserialize(using = TimeDeserializer.class)
+
     @Column(name = "booking_start_date_time")
     private Date BookingStartDateTime;
 
@@ -68,6 +66,10 @@ public class Booking {
 
     @Column(name = "booking_status")
     private String bookingStatus;
+
+    @ManyToOne(fetch = FetchType.LAZY) // Assuming Many bookings can be for one User
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @PrePersist
     protected void onCreate() {

@@ -9,20 +9,17 @@ import com.mastek.parking.model.User;
 import com.mastek.parking.service.BookingService;
 import com.mastek.parking.service.ParkingService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.Optional;
+
 import com.mastek.parking.service.UserDetailService;
 
 import javax.validation.Valid;
-import java.time.Instant;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
 
-import java.time.LocalTime;
+import java.util.List;
+
 
 @RestController
 @RequestMapping("/api")
@@ -38,43 +35,29 @@ public class ParkingController {
     @Autowired
     private BookingService bookingService;
 
-    /*@GetMapping("/availability")
-    @ApiOperation(value = "Get parking availability", notes = "Returns a simple message", response = String.class)
-    public String getParkingAvailability() {
-        return "hello";
-    }*/
 
     @GetMapping("/users")
-    // @ApiOperation(value = "Get all users from the System", authorizations = {@Authorization(value = "Bearer")})
     public ResponseEntity<List<User>> getAllUsers() {
         List<User> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
 
     @PostMapping("/addUser")
-    /*@ApiOperation(value = "Add user to the System", authorizations = {@Authorization(value = "Bearer")})
-    @ApiResponses(value = {
-            @ApiResponse(code = 201, message = "User added successfully"),
-            @ApiResponse(code = 400, message = "Invalid input or validation error")
-    })*/
     public ResponseEntity<ApiResponse<User>> addUser(@Valid @RequestBody UserDto userDto) {
-        //return ResponseEntity.status(HttpStatus.CREATED).body("User added successfully");
         try {
             User newUser = userService.addUser(userDto);
-            ApiResponse<User> response = new ApiResponse<>(true, "User added successfully.", newUser);
+            ApiResponse<User> response = new ApiResponse<>(true, "User added successfully", newUser);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
-        } catch (ExistingUserException e) {
-            ApiResponse<User> response = new ApiResponse<>(false, "Existing User.", null);
+        } catch (InvalidOfficialEmailException e) {
+            ApiResponse<User> response = new ApiResponse<>(false, e.getMessage(), null);
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }catch (ExistingUserException e) {
+            ApiResponse<User> response = new ApiResponse<>(false, e.getMessage(), null);
             return new ResponseEntity<>(response, HttpStatus.CONFLICT);
         }catch (Exception e) {
-            ApiResponse<User> response = new ApiResponse<>(false, "Failed to add user.", null);
+            ApiResponse<User> response = new ApiResponse<>(false, "Failed to add user", null);
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
-       /* if (result.equals("User added successfully")) {
-            return new ResponseEntity<>(result, HttpStatus.CREATED);
-        } else {
-            return new ResponseEntity<>(result, HttpStatus.CONFLICT);
-    }*/
 
     }
 
@@ -89,9 +72,22 @@ public class ParkingController {
     }
 
     @GetMapping("/getParkingSlots")
-    public ResponseEntity<List<Parking>> getParking() {
-        List<Parking> parking = parkingService.getParking();
-        return new ResponseEntity<>(parking, HttpStatus.OK);
+    public ResponseEntity<ApiResponse<List<Parking>>> getParking() {
+        try {
+            List<Parking> parking = parkingService.getParking();
+            ApiResponse<List<Parking>> response = new ApiResponse<>(true, "Parking slots retrieved successfully", parking);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (ParkingNotFoundException ex) {
+            ApiResponse<List<Parking>> response = new ApiResponse<>(false, ex.getMessage(), null);
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }  catch (ParkingSlotUnavailableException ex) {
+            ApiResponse<List<Parking>> response = new ApiResponse<>(false, ex.getMessage(), null);
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        } catch (Exception ex) {
+            ApiResponse<List<Parking>> response = new ApiResponse<>(false, "An unexpected error occurred: " + ex.getMessage(), null);
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
     }
 
 
@@ -120,21 +116,27 @@ public class ParkingController {
 
         try {
             Booking newBooking = bookingService.bookParkingSlot(bookingRequest);
-            ApiResponse<Booking> response = new ApiResponse<>(true, "Parking slot booked successfully.", newBooking);
+            ApiResponse<Booking> response = new ApiResponse<>(true, "Booking created successfully with ID: "+newBooking.getBookingId(), newBooking);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (InvalidBookingDateException e) {
             ApiResponse<Booking> response = new ApiResponse<>(false, e.getMessage(), null);
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        } catch (UserNotFoundException e) {
+            ApiResponse<Booking> response = new ApiResponse<>(false, e.getMessage(), null);
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);//"User not found. Cannot book a slot.
+        } catch (UserNotActiveException e) {
+            ApiResponse<Booking> response = new ApiResponse<>(false, e.getMessage(), null);
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);//"User is not active. Cannot book a slot."
         } catch (Exception e) {
-            ApiResponse<Booking> response = new ApiResponse<>(false, "Parking slot unavailable", null);
-            return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+            ApiResponse<Booking> response = new ApiResponse<>(false, "Failed to book parking slot. Please try again later.", null);
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
 
 
     @PostMapping("/cancel-booking")
-    public ResponseEntity<ApiResponse<Void>> cancelBooking(@RequestBody CancelDto cancelDto) {
+    public ResponseEntity<ApiResponse<Void>> cancelBooking(@Valid @RequestBody CancelDto cancelDto) {
         // boolean success = bookingService.cancelBooking(bookingId);
         /*if (success) {
             return ResponseEntity.ok("Booking canceled successfully.");
@@ -143,19 +145,19 @@ public class ParkingController {
         }*/
         try {
             bookingService.cancelBooking(cancelDto.getBookingId());
-            ApiResponse<Void> response = new ApiResponse<>(true, "Booking "+cancelDto.getBookingId()+ " canceled successfully.", null);
+            ApiResponse<Void> response = new ApiResponse<>(true, cancelDto.getBookingId()+ " : cancelled successfully.", null);
             return new ResponseEntity<>(response, HttpStatus.OK);
         }  catch (InvalidBookingException e) {
-            ApiResponse<Void> response = new ApiResponse<>(false, "Booking Id is Invalid.", null);
+            ApiResponse<Void> response = new ApiResponse<>(false, "Booking Id is Invalid", null);
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }catch (Exception e) {
-            ApiResponse<Void> response = new ApiResponse<>(false, "Failed to cancel booking.", null);
+            ApiResponse<Void> response = new ApiResponse<>(false, "Failed to cancel booking", null);
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @PostMapping("/update-booking")
-    public ResponseEntity<ApiResponse<Booking>> updateBooking(
+    public ResponseEntity<ApiResponse<Booking>> updateBooking(@Valid
             @RequestBody UpdateBookingDto updateBookingDto) {
         //boolean success = bookingService.updateBooking(updateBookingDto);
         /*String bookingId = bookingService.updateBooking(updateBookingDto);
@@ -166,13 +168,13 @@ public class ParkingController {
         }*/
         try {
             Booking updatedBooking = bookingService.updateBooking(updateBookingDto);
-            ApiResponse<Booking> response = new ApiResponse<>(true, "Booking updated successfully.", updatedBooking);
+            ApiResponse<Booking> response = new ApiResponse<>(true, "Booking updated successfully", updatedBooking);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (InvalidBookingDateException e) {
             ApiResponse<Booking> response = new ApiResponse<>(false, e.getMessage(), null);
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
-            ApiResponse<Booking> response = new ApiResponse<>(false, "Failed to update booking.", null);
+            ApiResponse<Booking> response = new ApiResponse<>(false, "Failed to update booking", null);
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

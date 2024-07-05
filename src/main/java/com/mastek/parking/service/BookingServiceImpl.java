@@ -1,15 +1,13 @@
 package com.mastek.parking.service;
 
-import com.mastek.parking.common.ApiResponse;
 import com.mastek.parking.dto.BookingDto;
 import com.mastek.parking.dto.UpdateBookingDto;
-import com.mastek.parking.exception.DuplicateBookingException;
-import com.mastek.parking.exception.InvalidBookingDateException;
-import com.mastek.parking.exception.InvalidBookingException;
+import com.mastek.parking.exception.*;
 import com.mastek.parking.model.Booking;
 import com.mastek.parking.model.Parking;
 import com.mastek.parking.repository.BookingRepository;
 import com.mastek.parking.repository.ParkingRepository;
+import com.mastek.parking.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +25,12 @@ public class BookingServiceImpl implements BookingService{
     @Autowired
     private ParkingRepository parkingRepository;
 
+    @Autowired
+    private UserDetailService userDetailService;
+
+    @Autowired
+    private UserRepository userRepository;
+
     @Override
     @Transactional()
     public List<Parking> checkAvailability(String location) {
@@ -38,17 +42,27 @@ public class BookingServiceImpl implements BookingService{
     public Booking bookParkingSlot(BookingDto bookingDto) {
 
         //Validate past booking date
-        validateBookingDate(bookingDto.getBookingDate());
+        validateBookingDate(bookingDto.getBookingStartDateTime());
+        validateBookingDate(bookingDto.getBookingEndDateTime());
 
         // Check availability
         Parking parkingSlot = parkingRepository.findById(bookingDto.getParkingSlotNumber())
-                .orElseThrow(() -> new RuntimeException("Parking slot not found"));
+                .orElseThrow(() ->  new ParkingNotFoundException("Parking slot not found"));
+
+        // Validate user before proceeding with booking
+        validateUserForBooking(bookingDto);
+
+       /* // Check if user can book a slot
+        boolean canBook = userDetailService.canBookSlot(bookingDto.getUserId());
+        if (!canBook) {
+            throw new RuntimeException("User is not eligible to book a slot."); // Replace with appropriate exception
+        }*/
 
         List<Parking> availableSlots = parkingRepository.findAvailableParkingSlots(parkingSlot.getLocation());
         if (availableSlots.isEmpty()) {
             //return null; // Slot not available
             // return new ApiResponse<Booking>(false, "Slot not available", null);
-            throw new RuntimeException("Slot not available");
+            throw new ParkingSlotUnavailableException("Slot not available");
         }
         Optional<Booking> existingBooking = bookingRepository.findByParkingSlotNumberAndBookingStatus(bookingDto.getParkingSlotNumber());
         if (existingBooking.isPresent()) {
@@ -65,7 +79,7 @@ public class BookingServiceImpl implements BookingService{
         booking.setUsername(bookingDto.getUsername());
         booking.setUserEmail(bookingDto.getUserEmail());
         booking.setParkingSlotNumber(bookingDto.getParkingSlotNumber());
-        booking.setBookingDate(bookingDto.getBookingDate());
+        //booking.setBookingDate(bookingDto.getBookingDate());
         booking.setBookingStartDateTime(bookingDto.getBookingStartDateTime());
         booking.setBookingEndDateTime(bookingDto.getBookingEndDateTime());
         booking.setComment(bookingDto.getComment());
@@ -86,7 +100,7 @@ public class BookingServiceImpl implements BookingService{
 
         // Update parking slot
         Parking parkingSlot = parkingRepository.findById(booking.getParkingSlotNumber())
-                .orElseThrow(() -> new RuntimeException("Parking slot not found"));
+                .orElseThrow(() -> new ParkingNotFoundException("Parking slot not found"));
         parkingSlot.setIsOccupied(false);
         // parkingSlot.setAvailableSpots(parkingSlot.getAvailableSpots() + 1);
         parkingRepository.save(parkingSlot);
@@ -107,7 +121,7 @@ public class BookingServiceImpl implements BookingService{
     public Booking updateBooking(UpdateBookingDto updateBookingDto) {
         // Find booking
         Booking booking = bookingRepository.findById(updateBookingDto.getBookingId())
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+                .orElseThrow(() -> new InvalidBookingException("Booking not found"));
 
         // Validate new booking times
         validateBookingDate(updateBookingDto);
@@ -144,8 +158,16 @@ public class BookingServiceImpl implements BookingService{
             throw new InvalidBookingDateException("'From time' cannot be after 'to time'.");
         }
 
-
-
     }
+    public void validateUserForBooking(BookingDto bookingDto) {
+        // Check if user exists in the database
+        userRepository.findById(bookingDto.getUserDto().getId())
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + bookingDto.getUserDto().getId()));
+
+         if (!bookingDto.getUserDto().getStatus().equalsIgnoreCase("Active")) {
+            throw new UserNotActiveException("User is not active and cannot book a slot.");
+         }
+    }
+
 
 }

@@ -14,4 +14,8 @@ public interface UserDetailService {
     List<User> getAllUsers();
 
     User getUserById(Long userId);
+
+    public boolean canBookSlot(Long userId);
+
+    boolean isValidOfficialEmail(Long userId);
 }

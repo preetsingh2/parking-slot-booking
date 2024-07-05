@@ -7,6 +7,7 @@ import java.util.Date;
 @Data
 public class UserDto {
 
+    private Long id;
     private String username;
     private String firstName;
     private String lastName;
@@ -15,6 +16,7 @@ public class UserDto {
     private String mobileNumber;
     private Date created_date;  //timestamp
     private Date updated_date;  //timestamp
+    private String status;
 
 
 }

@@ -2,6 +2,7 @@ package com.mastek.parking.service;
 
 import com.mastek.parking.dto.ParkingDto;
 import com.mastek.parking.exception.DuplicateParkingSlotException;
+import com.mastek.parking.exception.ParkingNotFoundException;
 import com.mastek.parking.exception.ResourceNotFoundException;
 import com.mastek.parking.model.Parking;
 import com.mastek.parking.repository.BookingRepository;
@@ -51,7 +52,7 @@ public class ParkingServiceImpl implements ParkingService{
     public List<Parking> getParking() {
         List<Parking> parkingList = parkingRepository.findAll();
         if (parkingList.isEmpty()) {
-            throw new ResourceNotFoundException("Parking not found");
+            throw new ParkingNotFoundException("Parking not found");
         }
         return parkingList;
     }

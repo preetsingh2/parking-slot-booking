@@ -27,5 +27,11 @@ public class GlobalExceptionHandler {
         ApiResponse<String> response = new ApiResponse<>(false, "An error occurred: " + ex.getMessage(), null);
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    @ExceptionHandler(InvalidOfficialEmailException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvalidOfficialEmailException(InvalidOfficialEmailException ex) {
+        ApiResponse<Void> response = new ApiResponse<>(false, ex.getMessage(), null);
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
 }
 
