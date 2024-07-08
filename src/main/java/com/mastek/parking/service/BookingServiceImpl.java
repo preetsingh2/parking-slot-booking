@@ -5,6 +5,7 @@ import com.mastek.parking.dto.UpdateBookingDto;
 import com.mastek.parking.exception.*;
 import com.mastek.parking.model.Booking;
 import com.mastek.parking.model.Parking;
+import com.mastek.parking.model.User;
 import com.mastek.parking.repository.BookingRepository;
 import com.mastek.parking.repository.ParkingRepository;
 import com.mastek.parking.repository.UserRepository;
@@ -52,11 +53,6 @@ public class BookingServiceImpl implements BookingService{
         // Validate user before proceeding with booking
         validateUserForBooking(bookingDto);
 
-       /* // Check if user can book a slot
-        boolean canBook = userDetailService.canBookSlot(bookingDto.getUserId());
-        if (!canBook) {
-            throw new RuntimeException("User is not eligible to book a slot."); // Replace with appropriate exception
-        }*/
 
         List<Parking> availableSlots = parkingRepository.findAvailableParkingSlots(parkingSlot.getLocation());
         if (availableSlots.isEmpty()) {
@@ -71,7 +67,7 @@ public class BookingServiceImpl implements BookingService{
 
         // Update parking slot
         parkingSlot.setIsOccupied(true);
-        //  parkingSlot.setAvailableSpots(parkingSlot.getAvailableSpots() - 1);
+
         parkingRepository.save(parkingSlot);
 
         // Insert booking record
@@ -101,19 +97,14 @@ public class BookingServiceImpl implements BookingService{
         // Update parking slot
         Parking parkingSlot = parkingRepository.findById(booking.getParkingSlotNumber())
                 .orElseThrow(() -> new ParkingNotFoundException("Parking slot not found"));
+
         parkingSlot.setIsOccupied(false);
-        // parkingSlot.setAvailableSpots(parkingSlot.getAvailableSpots() + 1);
         parkingRepository.save(parkingSlot);
 
         booking.setBookingStatus("Cancelled");
         booking.setComment("No reason");
         bookingRepository.save(booking);
 
-       /* // Delete booking record
-        bookingRepository.delete(booking);*/
-
-
-        // return true;
     }
 
     @Override
@@ -126,10 +117,24 @@ public class BookingServiceImpl implements BookingService{
         // Validate new booking times
         validateBookingDate(updateBookingDto);
 
-        // Update booking details
-        booking.setBookingStartDateTime(updateBookingDto.getNewFromTime());
-        booking.setBookingEndDateTime(updateBookingDto.getNewToTime());
-        booking.setComment(updateBookingDto.getNewComment());
+        // Handle early exit logic
+        if (updateBookingDto.getActualLeaveTime() != null) {
+            booking.setActualLeaveTime(updateBookingDto.getActualLeaveTime());
+            booking.setBookingStatus("Completed");
+
+            Parking parkingSlot = parkingRepository.findById(booking.getParkingSlotNumber())
+                    .orElseThrow(() -> new ParkingNotFoundException("Parking slot not found"));
+
+            parkingSlot.setIsOccupied(false);
+            parkingRepository.save(parkingSlot);
+        } else {
+            // Update booking details
+            booking.setBookingStartDateTime(updateBookingDto.getNewFromTime());
+            booking.setBookingEndDateTime(updateBookingDto.getNewToTime());
+            booking.setComment(updateBookingDto.getNewComment());
+            booking.setBookingStatus("Modified");
+        }
+
         bookingRepository.save(booking);
 
         //return booking.getBookingId();
@@ -160,14 +165,30 @@ public class BookingServiceImpl implements BookingService{
 
     }
     public void validateUserForBooking(BookingDto bookingDto) {
-        // Check if user exists in the database
-        userRepository.findById(bookingDto.getUserDto().getId())
-                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + bookingDto.getUserDto().getId()));
 
-         if (!bookingDto.getUserDto().getStatus().equalsIgnoreCase("Active")) {
+        // Check if user exists in the database
+        User user=userRepository.findByEmail(bookingDto.getUserEmail())
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + bookingDto.getUserDto().getEmail()));
+
+         if (!user.getStatus().equalsIgnoreCase("Active")) {
             throw new UserNotActiveException("User is not active and cannot book a slot.");
          }
     }
 
+    public void updateBookingForEarlyExit(UpdateBookingDto updateBookingDto) {
+        Booking booking = bookingRepository.findById(updateBookingDto.getBookingId())
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
 
+        booking.setActualLeaveTime(updateBookingDto.getActualLeaveTime());
+        booking.setBookingStatus("Completed");
+
+        Parking parkingSlot = parkingRepository.findById(booking.getParkingSlotNumber())
+                .orElseThrow(() -> new ParkingNotFoundException("Parking slot not found"));
+
+        parkingSlot.setIsOccupied(false);
+        parkingRepository.save(parkingSlot);
+
+        bookingRepository.save(booking);
+    }
 }
+

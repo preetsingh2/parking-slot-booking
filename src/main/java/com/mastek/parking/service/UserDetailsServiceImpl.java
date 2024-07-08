@@ -1,6 +1,7 @@
 package com.mastek.parking.service;
 
 import com.mastek.parking.dto.UserDto;
+import com.mastek.parking.dto.UserUpdateDto;
 import com.mastek.parking.exception.ExistingUserException;
 import com.mastek.parking.exception.InvalidOfficialEmailException;
 import com.mastek.parking.exception.UserNotFoundException;
@@ -56,6 +57,7 @@ public class UserDetailsServiceImpl implements UserDetailService {
         user.setEmail(userDto.getEmail());
         user.setPassword(passwordEncoder.encode(userDto.getPassword()));
         user.setMobileNumber(userDto.getMobileNumber());
+        user.setStatus("Active");
         return userRepository.save(user);
     }
 
@@ -65,8 +67,27 @@ public class UserDetailsServiceImpl implements UserDetailService {
         return userRepository.findAll();
     }
 
+    public void updateUser(Long userId, UserUpdateDto userUpdateDto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
+
+
+        if (userUpdateDto.getPassword() != null && !userUpdateDto.getPassword().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(userUpdateDto.getPassword()));
+        }
+        if (userUpdateDto.getMobileNumber()!= null) {
+            user.setMobileNumber(userUpdateDto.getMobileNumber());
+        }
+
+        if (userUpdateDto.getStatus() != null) {
+            user.setStatus(userUpdateDto.getStatus());
+        }
+
+        userRepository.save(user);
+    }
+
     private boolean checkExistingUser(UserDto userDto) {
-        return userRepository.findByEmail(userDto.getEmail()) != null;
+        return userRepository.findByEmail(userDto.getEmail()).isPresent() ;
     }
 
     @Override

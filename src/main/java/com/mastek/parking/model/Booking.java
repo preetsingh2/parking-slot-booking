@@ -1,15 +1,10 @@
 package com.mastek.parking.model;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.mastek.parking.exception.TimeDeserializer;
 import lombok.Data;
 import org.hibernate.annotations.GenericGenerator;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import java.util.Date;
 
 @Entity
@@ -41,14 +36,15 @@ public class Booking {
     @Temporal(TemporalType.TIMESTAMP)
 
     @Column(name = "booking_start_date_time")
-    private Date BookingStartDateTime;
+    private Date bookingStartDateTime;
 
     @Temporal(TemporalType.TIMESTAMP)
-    //@JsonFormat(pattern = "HH:mm:ss")
- //   @DateTimeFormat(pattern = "HH:mm:ss")
-    //@JsonDeserialize(using = TimeDeserializer.class)
     @Column(name = "booking_end_date_time")
-    private Date BookingEndDateTime;
+    private Date bookingEndDateTime;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "actual_end_date_time")
+    private Date actualLeaveTime;
 
     @Temporal(TemporalType.TIMESTAMP)
     @DateTimeFormat(pattern = "HH:mm:ss")
@@ -66,10 +62,6 @@ public class Booking {
 
     @Column(name = "booking_status")
     private String bookingStatus;
-
-    @ManyToOne(fetch = FetchType.LAZY) // Assuming Many bookings can be for one User
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
 
     @PrePersist
     protected void onCreate() {

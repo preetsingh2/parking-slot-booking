@@ -19,11 +19,6 @@ import java.util.Date;
 
 public class User {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private String id;
-
     @Column(name = "username")
     private String username;
 
@@ -35,6 +30,8 @@ public class User {
     @Column(name = "last_name")
     private String lastName;
 
+
+    @Id
     @NotBlank(message = "Email is mandatory")
     @Email(message = "Email should be valid")
     @Size(max = 100, message = "Email cannot be longer than 100 characters")

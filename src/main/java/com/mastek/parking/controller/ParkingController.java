@@ -61,6 +61,23 @@ public class ParkingController {
 
     }
 
+    @PutMapping("/{userId}")
+    public ResponseEntity<ApiResponse<Void>> updateUser(
+            @PathVariable Long userId,
+            @RequestBody UserUpdateDto userUpdateDto) {
+        try {
+            userService.updateUser(userId, userUpdateDto);
+            ApiResponse<Void> response = new ApiResponse<>(true, "User details updated successfully.", null);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (UserNotFoundException e) {
+            ApiResponse<Void> response = new ApiResponse<>(false, e.getMessage(), null);
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }catch (Exception e) {
+            ApiResponse<Void> response = new ApiResponse<>(false, "Failed to update user details.", null);
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @PostMapping("/addParkingSlot")
     public ResponseEntity<String> addParkingSlot(@Valid @RequestBody ParkingDto parkingDto) {
         try {
