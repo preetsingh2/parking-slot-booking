@@ -98,6 +98,14 @@ public class UserDetailsServiceImpl implements UserDetailService {
                 .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
     }
 
+    @Override
+    @Transactional
+    public User getUserByEmail(String email) {
+        // Retrieve user by email from the database
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + email));
+    }
+
     private void validateOfficialEmail(String email) {
         if (!Pattern.matches(OFFICIAL_EMAIL_PATTERN, email)) {
             throw new InvalidOfficialEmailException("Invalid official email address: " + email);

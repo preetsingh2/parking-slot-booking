@@ -167,10 +167,11 @@ public class BookingServiceImpl implements BookingService{
     public void validateUserForBooking(BookingDto bookingDto) {
 
         // Check if user exists in the database
-        User user=userRepository.findByEmail(bookingDto.getUserEmail())
-                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + bookingDto.getUserDto().getEmail()));
+        Optional<User> user=userRepository.findByEmail(bookingDto.getUserEmail());
+        if(!user.isPresent())
+        throw new  UserNotFoundException("Invalid User");
 
-         if (!user.getStatus().equalsIgnoreCase("Active")) {
+         if(!user.get().getStatus().equalsIgnoreCase("Active")) {
             throw new UserNotActiveException("User is not active and cannot book a slot.");
          }
     }

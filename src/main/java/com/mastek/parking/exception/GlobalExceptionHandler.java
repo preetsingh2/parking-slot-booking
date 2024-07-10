@@ -12,25 +12,25 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidBookingDateException.class)
     public ResponseEntity<ApiResponse<String>> handleInvalidBookingDateException(InvalidBookingDateException ex, WebRequest request) {
-        ApiResponse<String> response = new ApiResponse<>(false, ex.getMessage(), null);
+        ApiResponse<String> response = new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), null);
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(DuplicateBookingException.class)
     public ResponseEntity<ApiResponse> handleDuplicateBookingException(DuplicateBookingException ex) {
-        ApiResponse response = new ApiResponse(false, ex.getMessage(), null);
+        ApiResponse response = new ApiResponse(HttpStatus.CONFLICT.value(), ex.getMessage(), null);
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<String>> handleAllExceptions(Exception ex, WebRequest request) {
-        ApiResponse<String> response = new ApiResponse<>(false, "An error occurred: " + ex.getMessage(), null);
+        ApiResponse<String> response = new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "An error occurred: " + ex.getMessage(), null);
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(InvalidOfficialEmailException.class)
     public ResponseEntity<ApiResponse<Void>> handleInvalidOfficialEmailException(InvalidOfficialEmailException ex) {
-        ApiResponse<Void> response = new ApiResponse<>(false, ex.getMessage(), null);
+        ApiResponse<Void> response = new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), null);
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 }

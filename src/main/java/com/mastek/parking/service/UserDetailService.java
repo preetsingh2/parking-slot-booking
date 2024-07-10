@@ -16,6 +16,8 @@ public interface UserDetailService {
 
     User getUserById(Long userId);
 
+    User getUserByEmail(String email);
+
     public boolean canBookSlot(Long userId);
 
     boolean isValidOfficialEmail(Long userId);
