@@ -9,6 +9,7 @@ import com.mastek.parking.model.User;
 import com.mastek.parking.repository.BookingRepository;
 import com.mastek.parking.repository.ParkingRepository;
 import com.mastek.parking.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class BookingServiceImpl implements BookingService{
 
@@ -114,12 +116,9 @@ public class BookingServiceImpl implements BookingService{
         Booking booking = bookingRepository.findById(updateBookingDto.getBookingId())
                 .orElseThrow(() -> new InvalidBookingException("Booking not found"));
 
-        // Validate new booking times
-        validateBookingDate(updateBookingDto);
-
-        // Handle early exit logic
-        if (updateBookingDto.getActualLeaveTime() != null) {
-            booking.setActualLeaveTime(updateBookingDto.getActualLeaveTime());
+       /*//update status to completed when end date is crossed
+        if (updateBookingDto.getActualLeaveTime() == null) {
+            booking.setActualLeaveTime(new Date());
             booking.setBookingStatus("Completed");
 
             Parking parkingSlot = parkingRepository.findById(booking.getParkingSlotNumber())
@@ -127,17 +126,17 @@ public class BookingServiceImpl implements BookingService{
 
             parkingSlot.setIsOccupied(false);
             parkingRepository.save(parkingSlot);
-        } else {
+        } else {*/
+
+            // Validate new booking times
+            validateBookingDate(updateBookingDto);
             // Update booking details
             booking.setBookingStartDateTime(updateBookingDto.getNewFromTime());
             booking.setBookingEndDateTime(updateBookingDto.getNewToTime());
             booking.setComment(updateBookingDto.getNewComment());
             booking.setBookingStatus("Modified");
-        }
 
         bookingRepository.save(booking);
-
-        //return booking.getBookingId();
         return booking;
     }
 

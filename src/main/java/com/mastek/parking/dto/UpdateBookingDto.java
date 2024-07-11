@@ -11,5 +11,6 @@ public class UpdateBookingDto {
     Date newFromTime;
     Date newToTime;
     String newComment;
-    Date ActualLeaveTime;
+    Date actualLeaveTime;
+
 }
