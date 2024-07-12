@@ -15,6 +15,8 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import javax.transaction.Transactional;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -48,16 +50,20 @@ public class BookingServiceImpl implements BookingService{
     @Transactional
     public Booking bookParkingSlot(BookingDto bookingDto) {
 
-        //Validate past booking date
-        validateBookingDate(bookingDto.getBookingStartDateTime());
-        validateBookingDate(bookingDto.getBookingEndDateTime());
+        // Validate user before proceeding with booking
+        validateUserForBooking(bookingDto);
 
         // Check availability
         Parking parkingSlot = parkingRepository.findById(bookingDto.getParkingSlotNumber())
                 .orElseThrow(() ->  new ParkingNotFoundException("Parking slot not found"));
 
-        // Validate user before proceeding with booking
-        validateUserForBooking(bookingDto);
+        // Validate booking date format
+        validateBookingDateFormat(bookingDto.getBookingStartDateTime());
+        validateBookingDateFormat(bookingDto.getBookingEndDateTime());
+
+        //Validate past booking date
+        validateBookingDate(bookingDto.getBookingStartDateTime());
+        validateBookingDate(bookingDto.getBookingEndDateTime());
 
 
         List<Parking> availableSlots = parkingRepository.findAvailableParkingSlots(parkingSlot.getLocation());
@@ -67,6 +73,10 @@ public class BookingServiceImpl implements BookingService{
         Optional<Booking> existingBooking = bookingRepository.findByParkingSlotNumberAndBookingStatus(bookingDto.getParkingSlotNumber());
         if (existingBooking.isPresent()) {
             throw new DuplicateBookingException("Booking already exists for parking slot number: " + bookingDto.getParkingSlotNumber());
+        }
+       // Check if the parking spot is already occupied
+        if (parkingSlot.getIsOccupied()) {
+            throw new ParkingSlotOccupiedException("Parking spot is already occupied with an existing booking");
         }
 
         // Update parking slot
@@ -146,6 +156,15 @@ public class BookingServiceImpl implements BookingService{
 
     }
 
+    private void validateBookingDateFormat(Date bookingDate) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+        sdf.setLenient(false);
+        try {
+            sdf.parse(bookingDate.toString());
+        } catch (ParseException e) {
+            throw new InvalidBookingTimeFormatException("Invalid booking time format");
+        }
+    }
     private void validateBookingDate(UpdateBookingDto updateBookingDto) {
         Date currentDate = new Date();
 
@@ -173,6 +192,7 @@ public class BookingServiceImpl implements BookingService{
             throw new UserNotActiveException("User is not active and cannot book a slot.");
          }
     }
+
 
     public void updateBookingForEarlyExit(UpdateBookingDto updateBookingDto) {
         Booking booking = bookingRepository.findById(updateBookingDto.getBookingId())
