@@ -9,15 +9,11 @@ import com.mastek.parking.model.User;
 import com.mastek.parking.service.BookingService;
 import com.mastek.parking.service.ParkingService;
 import org.springframework.beans.factory.annotation.Autowired;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import com.mastek.parking.service.UserDetailService;
-
 import javax.validation.Valid;
-
 import java.util.List;
 
 
@@ -123,18 +119,6 @@ public class ParkingController {
     @PostMapping("/book-slot")
     public ResponseEntity<ApiResponse<Booking>> bookParkingSlot(
             @RequestBody BookingDto bookingRequest) {
-        // boolean success = bookingService.bookParkingSlot(bookingRequest);
-       /* try {
-        String bookingId = bookingService.bookParkingSlot(bookingRequest);
-        if (bookingId != null) {
-            return ResponseEntity.ok("Parking slot booked successfully. Your Booking ID is : "+ bookingId);
-        } else {
-            return ResponseEntity.badRequest().body("Failed to book parking slot."); // Or any suitable error indicator
-        }
-        } catch (DuplicateBookingException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.CONFLICT);
-        }*/
-
         try {
             Booking newBooking = bookingService.bookParkingSlot(bookingRequest);
             ApiResponse<Booking> response = new ApiResponse<>(HttpStatus.CREATED.value(), "Booking created successfully with ID: "+newBooking.getBookingId(), newBooking);
@@ -164,12 +148,7 @@ public class ParkingController {
 
     @PostMapping("/cancel-booking")
     public ResponseEntity<ApiResponse<Void>> cancelBooking(@Valid @RequestBody CancelDto cancelDto) {
-        // boolean success = bookingService.cancelBooking(bookingId);
-        /*if (success) {
-            return ResponseEntity.ok("Booking canceled successfully.");
-        } else {
-            return ResponseEntity.badRequest().body("Failed to cancel booking.");
-        }*/
+
         try {
             bookingService.cancelBooking(cancelDto.getBookingId());
             ApiResponse<Void> response = new ApiResponse<>(HttpStatus.OK.value(), cancelDto.getBookingId()+ " : cancelled successfully.", null);
@@ -186,13 +165,7 @@ public class ParkingController {
     @PostMapping("/update-booking")
     public ResponseEntity<ApiResponse<Booking>> updateBooking(@Valid
             @RequestBody UpdateBookingDto updateBookingDto) {
-        //boolean success = bookingService.updateBooking(updateBookingDto);
-        /*String bookingId = bookingService.updateBooking(updateBookingDto);
-        if (bookingId != null) {
-            return ResponseEntity.ok("Your Booking for booking ID " + bookingId +" updated successfully.");
-        } else {
-            return ResponseEntity.badRequest().body("Failed to update booking."); // Or any suitable error indicator
-        }*/
+
         try {
             Booking updatedBooking = bookingService.updateBooking(updateBookingDto);
             ApiResponse<Booking> response = new ApiResponse<>(HttpStatus.OK.value(), "Booking updated successfully", updatedBooking);

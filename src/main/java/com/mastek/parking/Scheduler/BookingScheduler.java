@@ -26,6 +26,9 @@ public class BookingScheduler {
     @Autowired
     private ParkingRepository parkingRepository;
 
+    @Autowired
+    private BookingService bookingService;
+
     @Scheduled(fixedRate = 60000) // Run every minute
     public void checkBookings() {
         log.info("checkBookings triggered");
@@ -49,4 +52,5 @@ public class BookingScheduler {
             }
         }
     }
+
 }

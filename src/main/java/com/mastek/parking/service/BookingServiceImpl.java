@@ -11,8 +11,9 @@ import com.mastek.parking.repository.ParkingRepository;
 import com.mastek.parking.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
-
 import javax.transaction.Transactional;
 import java.util.Date;
 import java.util.List;
@@ -33,6 +34,9 @@ public class BookingServiceImpl implements BookingService{
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private JavaMailSender mailSender;
 
     @Override
     @Transactional()
@@ -58,8 +62,6 @@ public class BookingServiceImpl implements BookingService{
 
         List<Parking> availableSlots = parkingRepository.findAvailableParkingSlots(parkingSlot.getLocation());
         if (availableSlots.isEmpty()) {
-            //return null; // Slot not available
-            // return new ApiResponse<Booking>(false, "Slot not available", null);
             throw new ParkingSlotUnavailableException("Slot not available");
         }
         Optional<Booking> existingBooking = bookingRepository.findByParkingSlotNumberAndBookingStatus(bookingDto.getParkingSlotNumber());
@@ -77,15 +79,15 @@ public class BookingServiceImpl implements BookingService{
         booking.setUsername(bookingDto.getUsername());
         booking.setUserEmail(bookingDto.getUserEmail());
         booking.setParkingSlotNumber(bookingDto.getParkingSlotNumber());
-        //booking.setBookingDate(bookingDto.getBookingDate());
         booking.setBookingStartDateTime(bookingDto.getBookingStartDateTime());
         booking.setBookingEndDateTime(bookingDto.getBookingEndDateTime());
         booking.setComment(bookingDto.getComment());
         booking.setBookingStatus("Active");
         bookingRepository.save(booking);
 
-        //return booking.getBookingId();
-        // return new ApiResponse<Booking>(true, "Parking slot booked successfully", booking.getBookingId());
+        //send booking confirmation email notification
+        sendBookingNotification("Booking Confirmation","Your booking is confirmed:", booking);
+
         return booking;
     }
 
@@ -107,6 +109,9 @@ public class BookingServiceImpl implements BookingService{
         booking.setComment("No reason");
         bookingRepository.save(booking);
 
+        //send cancellation email notification
+        sendBookingNotification(
+                "Booking Cancellation Notification", "Your booking has been cancelled. Here are the details:", booking);
     }
 
     @Override
@@ -116,20 +121,9 @@ public class BookingServiceImpl implements BookingService{
         Booking booking = bookingRepository.findById(updateBookingDto.getBookingId())
                 .orElseThrow(() -> new InvalidBookingException("Booking not found"));
 
-       /*//update status to completed when end date is crossed
-        if (updateBookingDto.getActualLeaveTime() == null) {
-            booking.setActualLeaveTime(new Date());
-            booking.setBookingStatus("Completed");
-
-            Parking parkingSlot = parkingRepository.findById(booking.getParkingSlotNumber())
-                    .orElseThrow(() -> new ParkingNotFoundException("Parking slot not found"));
-
-            parkingSlot.setIsOccupied(false);
-            parkingRepository.save(parkingSlot);
-        } else {*/
-
             // Validate new booking times
             validateBookingDate(updateBookingDto);
+
             // Update booking details
             booking.setBookingStartDateTime(updateBookingDto.getNewFromTime());
             booking.setBookingEndDateTime(updateBookingDto.getNewToTime());
@@ -137,6 +131,11 @@ public class BookingServiceImpl implements BookingService{
             booking.setBookingStatus("Modified");
 
         bookingRepository.save(booking);
+
+        //send booking update email notification
+        sendBookingNotification(
+                "Booking Update Notification", "Your booking has been updated. Here are the details:", booking);
+
         return booking;
     }
 
@@ -190,5 +189,22 @@ public class BookingServiceImpl implements BookingService{
 
         bookingRepository.save(booking);
     }
+
+     public void sendBookingNotification(String subject, String context, Booking booking) {
+         String body = "Dear " + booking.getUsername() + ",\n\n" +
+                context +"\n\n" +
+                "Booking ID: " + booking.getBookingId() + "\n" +
+                "Start Time: " + booking.getBookingStartDateTime() + "\n" +
+                 "End Time: " + booking.getBookingEndDateTime() + "\n\n" +
+                "Thank you for using our service." +"\n\n"+
+                "-Admin";
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(booking.getUserEmail());
+        message.setSubject(subject);
+        message.setText(body);
+        mailSender.send(message);
+    }
+
 }
 

@@ -24,4 +24,6 @@ public interface BookingService {
 
     @Transactional
     Booking updateBooking(UpdateBookingDto updateBookingDto);
+
+
 }
