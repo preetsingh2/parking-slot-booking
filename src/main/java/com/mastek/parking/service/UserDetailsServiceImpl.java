@@ -1,12 +1,13 @@
 package com.mastek.parking.service;
 
+import com.mastek.parking.common.TokenProvider;
+import com.mastek.parking.dto.LoginRequestDto;
 import com.mastek.parking.dto.UserDto;
 import com.mastek.parking.dto.UserUpdateDto;
-import com.mastek.parking.exception.ExistingUserException;
-import com.mastek.parking.exception.InvalidOfficialEmailException;
-import com.mastek.parking.exception.UserNotFoundException;
+import com.mastek.parking.exception.*;
 import com.mastek.parking.model.User;
 import com.mastek.parking.repository.UserRepository;
+import com.mastek.parking.util.EmailNotification;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -18,6 +19,7 @@ import javax.validation.ConstraintViolationException;
 import javax.validation.Validator;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 import static com.mastek.parking.common.Constants.OFFICIAL_EMAIL_PATTERN;
@@ -34,6 +36,13 @@ public class UserDetailsServiceImpl implements UserDetailService {
 
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
+
+    @Autowired
+    private TokenProvider tokenProvider;
+
+    @Autowired
+    private EmailNotification emailService;
+
 
     @Override
     @Transactional
@@ -67,9 +76,11 @@ public class UserDetailsServiceImpl implements UserDetailService {
         return userRepository.findAll();
     }
 
-    public void updateUser(Long userId, UserUpdateDto userUpdateDto) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
+    @Override
+    @Transactional()
+    public User updateUser(String email, UserUpdateDto userUpdateDto) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + email));
 
 
         if (userUpdateDto.getPassword() != null && !userUpdateDto.getPassword().isEmpty()) {
@@ -83,7 +94,7 @@ public class UserDetailsServiceImpl implements UserDetailService {
             user.setStatus(userUpdateDto.getStatus());
         }
 
-        userRepository.save(user);
+        return userRepository.save(user);
     }
 
     private boolean checkExistingUser(UserDto userDto) {
@@ -129,4 +140,62 @@ public class UserDetailsServiceImpl implements UserDetailService {
         return userEmail != null && userEmail.toLowerCase().endsWith(officialEmailDomain);
     }
 
+    public String login(LoginRequestDto loginRequest) throws AuthenticationException {
+        User user = userRepository.findByEmail(loginRequest.getEmail())
+                .orElseThrow(() -> new AuthenticationException("User not found"));
+
+        if (!user.getEmail().equals(loginRequest.getEmail())) {
+            throw new AuthenticationException("Invalid username");
+        }
+
+        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+            throw new AuthenticationException("Invalid password");
+        }
+        log.info("Login Successful");
+        // Generate JWT token
+        return tokenProvider.generateToken(user);
+    }
+
+    public void logout(String token) {
+        // Invalidate the token
+        tokenProvider.invalidateToken(token);
+    }
+
+    public String forgotPassword(String email) throws UserNotFoundException {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+
+        // Generate a password reset token
+        String resetToken = UUID.randomUUID().toString();
+
+        // Save the reset token to the user record or a separate password reset token entity
+        user.setResetToken(resetToken);
+        userRepository.save(user);
+
+        // Create a password reset link
+        String resetLink = "http://gmail.com/reset-password?token=" + resetToken;
+
+        // Email content
+        String subject = "Password Reset Request";
+        String body = "Dear " + user.getFirstName() + ",\n\n" +
+                "We received a request to reset your password. Click the link below to reset your password:\n" +
+                resetLink + "\n\n" +
+                "If you did not request a password reset, please ignore this email.\n\n" +
+                "Best regards,\n" +
+                "Admin";
+
+        // Send the email
+        emailService.sendEmail(email, subject, body);
+        return resetLink;
+    }
+
+    public void resetPassword(String token, String newPassword) throws InvalidTokenException, UserNotFoundException {
+        User user = userRepository.findByResetToken(token)
+                .orElseThrow(() -> new InvalidTokenException("Invalid token"));
+
+        // Update the user's password and clear the reset token
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setResetToken(null);
+        userRepository.save(user);
+    }
 }

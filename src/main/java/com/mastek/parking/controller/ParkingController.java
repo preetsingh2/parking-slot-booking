@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import com.mastek.parking.service.UserDetailService;
 import javax.validation.Valid;
 import java.util.List;
+import java.util.Map;
 
 
 @RestController
@@ -38,6 +39,26 @@ public class ParkingController {
         return ResponseEntity.ok(users);
     }
 
+    @GetMapping("/user")
+    public ResponseEntity<ApiResponse<User>> getUserByEmail(@Valid @RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        if (email == null) {
+            ApiResponse<User> response = new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Email is required", null);
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+        try {
+            User user = userService.getUserByEmail(email);
+            ApiResponse<User> response = new ApiResponse<>(HttpStatus.OK.value(), "User details found", user);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (UserNotFoundException e) {
+            ApiResponse<User> response = new ApiResponse<>(HttpStatus.NOT_FOUND.value(), e.getMessage(), null);
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }catch (Exception e) {
+            ApiResponse<User> response = new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Failed to retrieve user details", null);
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+    }
+
     @PostMapping("/addUser")
     public ResponseEntity<ApiResponse<User>> addUser(@Valid @RequestBody UserDto userDto) {
         try {
@@ -57,20 +78,75 @@ public class ParkingController {
 
     }
 
-    @PutMapping("/{userId}")
-    public ResponseEntity<ApiResponse<Void>> updateUser(
-            @PathVariable Long userId,
-            @RequestBody UserUpdateDto userUpdateDto) {
+    @PutMapping("/updateUser")
+    public ResponseEntity<ApiResponse<User>> updateUser(
+            @RequestParam String email,
+            @Valid @RequestBody UserUpdateDto userUpdateDto) {
+        System.out.println("Email for update : " + email);
+        System.out.println("Request Body for update: " + userUpdateDto);
         try {
-            userService.updateUser(userId, userUpdateDto);
-            ApiResponse<Void> response = new ApiResponse<>(HttpStatus.OK.value(), "User details updated successfully.", null);
+            User updatedUser = userService.updateUser(email, userUpdateDto);
+            ApiResponse<User> response = new ApiResponse<>(HttpStatus.OK.value(), "User details updated successfully.", updatedUser);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (UserNotFoundException e) {
-            ApiResponse<Void> response = new ApiResponse<>(HttpStatus.NOT_FOUND.value(), e.getMessage(), null);
+            ApiResponse<User> response = new ApiResponse<>(HttpStatus.NOT_FOUND.value(), e.getMessage(), null);
             return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }catch (Exception e) {
-            ApiResponse<Void> response = new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Failed to update user details.", null);
+            ApiResponse<User> response = new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Failed to update user details.", null);
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<String>> login(@RequestBody LoginRequestDto loginRequest) {
+        try {
+            String token = userService.login(loginRequest);
+            ApiResponse<String> response = new ApiResponse<>(HttpStatus.OK.value(), "Login successful", token);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (AuthenticationException e) {
+            ApiResponse<String> response = new ApiResponse<>(HttpStatus.UNAUTHORIZED.value(), e.getMessage(), null);
+            return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+        }catch (Exception ex) {
+            ApiResponse<String> response = new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "failed to login" + ex.getMessage(), null);
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<String>> logout(@RequestHeader("Authorization") String token) {
+        userService.logout(token);
+        try {
+            ApiResponse<String> response = new ApiResponse<>(HttpStatus.OK.value(), "Logout successful", null);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (AuthenticationException e) {
+            ApiResponse<String> response = new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Failed to Logout", null);
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<String>> forgotPassword(@RequestBody LoginRequestDto forgotPassword) {
+        try {
+            String resetLink = userService.forgotPassword(forgotPassword.getEmail());
+            ApiResponse<String> response = new ApiResponse<>(HttpStatus.OK.value(), "Password reset email sent", resetLink);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (UserNotFoundException e) {
+            ApiResponse<String> response = new ApiResponse<>(HttpStatus.NOT_FOUND.value(), e.getMessage(), null);
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<String>> resetPassword(
+            @RequestParam String token, @RequestBody LoginRequestDto newPassword) {
+        try {
+            userService.resetPassword(token, newPassword.getPassword());
+            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Password reset successful", null));
+        } catch (InvalidTokenException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Invalid token", null));
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), e.getMessage(), null));
         }
     }
 
@@ -84,7 +160,6 @@ public class ParkingController {
         } catch (DuplicateParkingSlotException e) {
             ApiResponse<Parking> response = new ApiResponse<>(HttpStatus.CONFLICT.value(), e.getMessage(), null);
             return new ResponseEntity<>(response, HttpStatus.CONFLICT);
-          //  return new ResponseEntity<>(e.getMessage(), HttpStatus.CONFLICT);
         }
     }
 
@@ -107,6 +182,20 @@ public class ParkingController {
 
     }
 
+    @DeleteMapping("/deleteParking")
+    public ResponseEntity<ApiResponse> deleteParkingSlot(@RequestParam Long parkingSlotNumber) {
+        try {
+            parkingService.deleteParkingSlot(parkingSlotNumber);
+            ApiResponse response = new ApiResponse<>(HttpStatus.OK.value(), "Parking slot deleted successfully", null);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (ParkingNotFoundException e) {
+            ApiResponse response = new ApiResponse<>(HttpStatus.CONFLICT.value(), e.getMessage(), null);
+            return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+        }catch (Exception e) {
+            ApiResponse response = new ApiResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "An error occurred while deleting the parking slot", null);
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
     @GetMapping("/check-availability")
     public ResponseEntity<List<Parking>> checkAvailability(
@@ -144,7 +233,11 @@ public class ParkingController {
         }
     }
 
-
+    @GetMapping("/booking")
+    public ResponseEntity<Booking> getBookingById(@RequestParam String bookingId) {
+        Booking booking = bookingService.getBookingById(bookingId);
+        return ResponseEntity.ok(booking);
+    }
 
     @PostMapping("/cancel-booking")
     public ResponseEntity<ApiResponse<Void>> cancelBooking(@Valid @RequestBody CancelDto cancelDto) {

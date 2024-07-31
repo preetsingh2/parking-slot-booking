@@ -61,6 +61,7 @@ public class User {
     @Column(name = "user_status")
     private String status;
 
+    private String resetToken;
     @PrePersist
     protected void onCreate() {
         createdDate = new Date();

@@ -12,6 +12,6 @@ public interface ParkingService {
 
     List<Parking> getParking();
 
-
+    public void deleteParkingSlot(Long parkingSlotNumber);
 
 }

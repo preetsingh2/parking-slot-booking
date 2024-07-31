@@ -17,9 +17,12 @@ import org.springframework.stereotype.Service;
 import javax.transaction.Transactional;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 @Slf4j
 @Service
@@ -58,8 +61,8 @@ public class BookingServiceImpl implements BookingService{
                 .orElseThrow(() ->  new ParkingNotFoundException("Parking slot not found"));
 
         // Validate booking date format
-        validateBookingDateFormat(bookingDto.getBookingStartDateTime());
-        validateBookingDateFormat(bookingDto.getBookingEndDateTime());
+        /*validateBookingDateFormat(bookingDto.getBookingStartDateTime());
+        validateBookingDateFormat(bookingDto.getBookingEndDateTime());*/
 
         //Validate past booking date
         validateBookingDate(bookingDto.getBookingStartDateTime());
@@ -99,6 +102,11 @@ public class BookingServiceImpl implements BookingService{
         sendBookingNotification("Booking Confirmation","Your booking is confirmed:", booking);
 
         return booking;
+    }
+
+    public Booking getBookingById(String id) {
+        return bookingRepository.findById(id)
+                .orElseThrow(() -> new BookingNotFoundException("Booking not found with ID: " + id));
     }
 
     @Override
@@ -157,11 +165,15 @@ public class BookingServiceImpl implements BookingService{
     }
 
     private void validateBookingDateFormat(Date bookingDate) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
-        sdf.setLenient(false);
+        DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
+        //SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+
+        System.out.println("bookingDate : "+ bookingDate);
+       // sdf.setLenient(false);
         try {
-            sdf.parse(bookingDate.toString());
-        } catch (ParseException e) {
+            LocalDateTime.parse(String.valueOf(bookingDate), FORMATTER);
+            //sdf.parse(bookingDate.toString());
+        } catch (DateTimeParseException e) {
             throw new InvalidBookingTimeFormatException("Invalid booking time format");
         }
     }

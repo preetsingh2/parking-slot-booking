@@ -29,7 +29,7 @@ public class BookingScheduler {
     @Autowired
     private BookingService bookingService;
 
-    @Scheduled(fixedRate = 60000) // Run every minute
+    @Scheduled(fixedRate = 600000) // Run every minute
     public void checkBookings() {
         log.info("checkBookings triggered");
         Date now = new Date();

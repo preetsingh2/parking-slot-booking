@@ -19,6 +19,9 @@ public interface BookingService {
     Booking bookParkingSlot(BookingDto bookingDto);
 
     @Transactional
+    public Booking getBookingById(String id);
+
+    @Transactional
     void cancelBooking(String bookingId);
 
 

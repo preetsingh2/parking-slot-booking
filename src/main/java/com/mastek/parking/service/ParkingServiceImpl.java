@@ -56,7 +56,13 @@ public class ParkingServiceImpl implements ParkingService{
         }
         return parkingList;
     }
-
-
+    @Override
+    @Transactional
+    public void deleteParkingSlot(Long parkingSlotNumber) {
+        if (!parkingRepository.existsById(parkingSlotNumber)) {
+            throw new ParkingNotFoundException("Parking slot not found with number: " + parkingSlotNumber);
+        }
+        parkingRepository.deleteById(parkingSlotNumber);
+    }
 
 }
