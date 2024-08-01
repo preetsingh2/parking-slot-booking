@@ -140,27 +140,37 @@ public class UserDetailsServiceImpl implements UserDetailService {
         return userEmail != null && userEmail.toLowerCase().endsWith(officialEmailDomain);
     }
 
+    @Override
+    @Transactional
     public String login(LoginRequestDto loginRequest) throws AuthenticationException {
         User user = userRepository.findByEmail(loginRequest.getEmail())
                 .orElseThrow(() -> new AuthenticationException("User not found"));
 
+
         if (!user.getEmail().equals(loginRequest.getEmail())) {
+            log.info("Invalid username");
             throw new AuthenticationException("Invalid username");
         }
 
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+            log.info("Invalid password");
             throw new AuthenticationException("Invalid password");
         }
         log.info("Login Successful");
+        log.info("Token generated! " +tokenProvider.generateToken(user));
         // Generate JWT token
         return tokenProvider.generateToken(user);
     }
 
+    @Override
+    @Transactional
     public void logout(String token) {
         // Invalidate the token
         tokenProvider.invalidateToken(token);
     }
 
+    @Override
+    @Transactional
     public String forgotPassword(String email) throws UserNotFoundException {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
@@ -189,6 +199,8 @@ public class UserDetailsServiceImpl implements UserDetailService {
         return resetLink;
     }
 
+    @Override
+    @Transactional
     public void resetPassword(String token, String newPassword) throws InvalidTokenException, UserNotFoundException {
         User user = userRepository.findByResetToken(token)
                 .orElseThrow(() -> new InvalidTokenException("Invalid token"));

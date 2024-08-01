@@ -62,6 +62,8 @@ public class User {
     private String status;
 
     private String resetToken;
+
+
     @PrePersist
     protected void onCreate() {
         createdDate = new Date();
