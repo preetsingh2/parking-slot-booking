@@ -100,7 +100,7 @@ public class BookingServiceImpl implements BookingService{
 
         //send booking confirmation email notification
         sendBookingNotification("Booking Confirmation","Your booking is confirmed:", booking);
-
+        log.info("Booking created successfully");
         return booking;
     }
 
@@ -126,7 +126,7 @@ public class BookingServiceImpl implements BookingService{
         booking.setBookingStatus("Cancelled");
         booking.setComment("No reason");
         bookingRepository.save(booking);
-
+        log.info("Booking cancelled successfully");
         //send cancellation email notification
         sendBookingNotification(
                 "Booking Cancellation Notification", "Your booking has been cancelled. Here are the details:", booking);
@@ -149,7 +149,7 @@ public class BookingServiceImpl implements BookingService{
             booking.setBookingStatus("Modified");
 
         bookingRepository.save(booking);
-
+        log.info("Booking updated successfully");
         //send booking update email notification
         sendBookingNotification(
                 "Booking Update Notification", "Your booking has been updated. Here are the details:", booking);
@@ -205,23 +205,6 @@ public class BookingServiceImpl implements BookingService{
          }
     }
 
-
-    public void updateBookingForEarlyExit(UpdateBookingDto updateBookingDto) {
-        Booking booking = bookingRepository.findById(updateBookingDto.getBookingId())
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
-
-        booking.setActualLeaveTime(updateBookingDto.getActualLeaveTime());
-        booking.setBookingStatus("Completed");
-
-        Parking parkingSlot = parkingRepository.findById(booking.getParkingSlotNumber())
-                .orElseThrow(() -> new ParkingNotFoundException("Parking slot not found"));
-
-        parkingSlot.setIsOccupied(false);
-        parkingRepository.save(parkingSlot);
-
-        bookingRepository.save(booking);
-    }
-
      public void sendBookingNotification(String subject, String context, Booking booking) {
          String body = "Dear " + booking.getUsername() + ",\n\n" +
                 context +"\n\n" +
@@ -236,6 +219,7 @@ public class BookingServiceImpl implements BookingService{
         message.setSubject(subject);
         message.setText(body);
         mailSender.send(message);
+        log.info("Notification sent");
     }
 
 }

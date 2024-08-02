@@ -63,10 +63,11 @@ public class UserDetailsServiceImpl implements UserDetailService {
         user.setUsername(userDto.getUsername());
         user.setFirstName(userDto.getFirstName());
         user.setLastName(userDto.getLastName());
-        user.setEmail(userDto.getEmail());
+        user.setEmail(userDto.getEmail().toLowerCase());
         user.setPassword(passwordEncoder.encode(userDto.getPassword()));
         user.setMobileNumber(userDto.getMobileNumber());
         user.setStatus("Active");
+        log.info("Login successful");
         return userRepository.save(user);
     }
 
@@ -93,7 +94,7 @@ public class UserDetailsServiceImpl implements UserDetailService {
         if (userUpdateDto.getStatus() != null) {
             user.setStatus(userUpdateDto.getStatus());
         }
-
+        log.info("User details updated successfully");
         return userRepository.save(user);
     }
 
@@ -123,31 +124,15 @@ public class UserDetailsServiceImpl implements UserDetailService {
         }
     }
 
-    @Override
-    public boolean canBookSlot(Long userId) {
-        User user = getUserById(userId); // This will throw exception if user not found
-        // Example: Check if user has a valid official email
-        boolean hasValidOfficialEmail = isValidOfficialEmail(userId);
-        // Additional business logic to determine if user can book a slot
-        return hasValidOfficialEmail; // Replace with your logic
-    }
-
-    @Override
-    public boolean isValidOfficialEmail(Long userId) {
-        User user = getUserById(userId);
-        String officialEmailDomain = "@mastek.com";
-        String userEmail = user.getEmail();
-        return userEmail != null && userEmail.toLowerCase().endsWith(officialEmailDomain);
-    }
 
     @Override
     @Transactional
     public String login(LoginRequestDto loginRequest) throws AuthenticationException {
-        User user = userRepository.findByEmail(loginRequest.getEmail())
+        User user = userRepository.findByEmail(loginRequest.getEmail().toLowerCase())
                 .orElseThrow(() -> new AuthenticationException("User not found"));
 
 
-        if (!user.getEmail().equals(loginRequest.getEmail())) {
+        if (!user.getEmail().equalsIgnoreCase(loginRequest.getEmail())) {
             log.info("Invalid username");
             throw new AuthenticationException("Invalid username");
         }
@@ -196,6 +181,7 @@ public class UserDetailsServiceImpl implements UserDetailService {
 
         // Send the email
         emailService.sendEmail(email, subject, body);
+        log.info("reset email is sent");
         return resetLink;
     }
 
@@ -209,5 +195,6 @@ public class UserDetailsServiceImpl implements UserDetailService {
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setResetToken(null);
         userRepository.save(user);
+        log.info("Password reset is successful");
     }
 }

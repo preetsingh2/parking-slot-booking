@@ -20,9 +20,6 @@ public interface UserDetailService {
 
     User getUserByEmail(String email);
 
-    public boolean canBookSlot(Long userId);
-
-    boolean isValidOfficialEmail(Long userId);
 
     User updateUser(String email, UserUpdateDto userUpdateDto);
 

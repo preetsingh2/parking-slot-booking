@@ -28,23 +28,23 @@ public class ParkingServiceImpl implements ParkingService{
     @Override
     @Transactional
     public Parking addParkingSlot(ParkingDto parkingDto) {
-      /*  ParkingDto parking = ParkingDto.builder().availableSpots(parkingDto.getAvailableSpots())
-                .totalSpots(parkingDto.getTotalSpots()).location(parkingDto.getLocation())
-                .build();*/
 
         Optional<Parking> existingSlot = parkingRepository
                 .findByLocationAndSlot(parkingDto.getLocation(),parkingDto.getSlotNumber());
         if (existingSlot.isPresent()) {
             throw new DuplicateParkingSlotException(
                     "Parking slot " +parkingDto.getSlotNumber()+ " already exists for location: " + parkingDto.getLocation());
-        }Parking parking = new Parking();
+        }
 
-      // parking.setId(parkingDto.getId());
+        Parking parking = new Parking();
         parking.setLocation(parkingDto.getLocation());
         parking.setIsOccupied(parkingDto.getIs_occupied());
         parking.setSlotNumber(parkingDto.getSlotNumber());
         parking.setCreatedBy(parkingDto.getCreated_by());
-        return parkingRepository.save(parking);
+         parkingRepository.save(parking);
+         log.info("Parking added");
+
+        return parking;
     }
 
     @Override
@@ -63,6 +63,7 @@ public class ParkingServiceImpl implements ParkingService{
             throw new ParkingNotFoundException("Parking slot not found with number: " + parkingSlotNumber);
         }
         parkingRepository.deleteById(parkingSlotNumber);
+        log.info("Parking deleted successfully");
     }
 
 }

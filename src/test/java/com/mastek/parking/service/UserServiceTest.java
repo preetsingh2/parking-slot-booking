@@ -30,7 +30,7 @@ public class UserServiceTest {
     @Mock
     private UserRepository userRepository;
 
-    @Mock
+    @Autowired
     private TokenProvider tokenProvider;
 
     User mockUser;
@@ -52,9 +52,6 @@ public class UserServiceTest {
 
         // Mock repository behavior
         when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(mockUser));
-
-        System.out.println("loginRequest email : " +loginRequest.getEmail() +" and Password "+loginRequest.getPassword());
-        System.out.println("user email : " +mockUser.getEmail() +" and Password "+mockUser.getPassword());
 
         // Call the service method
         String token = userService.login(loginRequest);

@@ -19,13 +19,9 @@ public interface ParkingRepository extends CrudRepository<Parking, Long> {
     @Query("SELECT p FROM Parking p WHERE p.location = :location  AND p.slotNumber = :slot_number")
     Optional<Parking> findByLocationAndSlot(@Param("location") String location, @Param("slot_number") Long slotNumber);
 
-      /*@Query("SELECT CASE WHEN COUNT(p) > 0 THEN TRUE ELSE FALSE END FROM Parking p WHERE p.location = :location AND p.availableSpots > 0 AND p.date = :date")
-    boolean checkAvailability(@Param("location") String location, @Param("date") Date date);*/
-
     @Query("SELECT CASE WHEN COUNT(p) > 0 THEN TRUE ELSE FALSE END FROM Parking p WHERE p.location = :location AND is_occupied = false")
     boolean checkAvailability(@Param("location") String location);
 
-   // @Query("SELECT p FROM Parking p WHERE p.location = :location AND p.availableSpots > 0 AND p.date = :date")
     @Query("SELECT p FROM Parking p WHERE p.location = :location AND is_occupied = false")
     List<Parking> findAvailableParkingSlots(@Param("location") String location);
 }
