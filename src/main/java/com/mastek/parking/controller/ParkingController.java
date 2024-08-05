@@ -224,7 +224,10 @@ public class ParkingController {
         } catch (ParkingSlotUnavailableException e) {
             ApiResponse<Booking> response = new ApiResponse<>(HttpStatus.NOT_FOUND.value(), e.getMessage(), null);
             return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);//"User is not active. Cannot book a slot."
-        }catch (DuplicateBookingException e) {
+        }catch (ParkingNotFoundException e) {
+            ApiResponse<Booking> response = new ApiResponse<>(HttpStatus.NOT_FOUND.value(), e.getMessage(), null);
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);//"User is not active. Cannot book a slot."
+        } catch (DuplicateBookingException e) {
             ApiResponse<Booking> response = new ApiResponse<>(HttpStatus.CONTINUE.value(), e.getMessage(), null);
             return new ResponseEntity<>(response, HttpStatus.CONFLICT);//"User is not active. Cannot book a slot."
         } catch (Exception e) {
